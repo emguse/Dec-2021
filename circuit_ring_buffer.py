@@ -10,7 +10,7 @@ class RingBuffer:
         data = self.ring[self.left]
         self.left += 1
         self.count -= 1
-        if self.left == length:
+        if self.left == self.size:
             self.left = 0
         return data
     
@@ -24,7 +24,7 @@ class RingBuffer:
         return self.ring[self.right]
 
     def append(self, data):
-        print(str(self.count) +","+str(len(self.ring)))
+        #print(str(self.count) +","+str(len(self.ring)))
         if self.count == self.size:  # If the ring is full
             self.popleft()  # discard the first piece of data
         self.ring[self.right] = data
