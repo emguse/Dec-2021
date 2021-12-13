@@ -12,7 +12,7 @@ IVENT_LENGTH = 10  # sec
 QUE_SIZE = int(IVENT_LENGTH/2 * 1/CYCLE_TIME)
 MOVE_AVE_LENGTH = 2
 REFARENCE_PAST_SAMPLE = 2
-THRESHOLD = 0.2
+THRESHOLD = 0.5
 ZERO_OFFSET = 0 # Zero point correction
 USE_PRINTER = False
 EXPORT_CSV = False
@@ -20,6 +20,8 @@ EXPORT_WAV = False
 USE_BUZZER = True
 PRINTER_RX = board.GP13
 PRINTER_TX = board.GP12
+BUTTON_A = board.GP16
+BUTTON_B = board.GP17
 
 class DifferentialPressureLogger():
     def __init__(self) -> None:
@@ -28,6 +30,11 @@ class DifferentialPressureLogger():
         self.d6f_ph0505 = D6F_PH0505()
         self.ma_p = 0
         self.past_sample = 0
+        self.button_up = digitalio.DigitalInOut(BUTTON_A)
+        self.button_up.switch_to_input(pull = digitalio.Pull.DOWN)
+        self.button_down = digitalio.DigitalInOut(BUTTON_B)
+        self.button_down.switch_to_input(pull = digitalio.Pull.DOWN) 
+        self.threshold = THRESHOLD
     def read_dp(self) -> Float:
         self.d6f_ph0505.start_order()
         self.d6f_ph0505.read_order()
@@ -65,7 +72,7 @@ def main():
     thermal_printer = PrinterDpEh600()
     past_time = 0
     thermal_printer.printer.print(str(time.time()))
-    thermal_printer.printer.print("THRESHOLD:"+ str(THRESHOLD))
+    thermal_printer.printer.print("THRESHOLD:"+ str(logger.threshold))
     for _ in range(MOVE_AVE_LENGTH):
         logger.read_and_record()
         logger.past_sample = logger.ma_p
@@ -73,7 +80,7 @@ def main():
         logger.read_and_record()
         delta = logger.past_sample - logger.ma_p
         if past_time <= time.time():
-            if abs(delta) >= THRESHOLD:
+            if abs(delta) >= logger.threshold:
                 #print("diff_p:" + str(round(ma_p, 4)) + "  Δ:" + str(round(delta, 4)) + "  time:" + str(time.time()))
                 print((round(logger.ma_p, 4), round(delta, 4)))
                 thermal_printer.printer.print(str(time.time()))
@@ -90,7 +97,16 @@ def main():
                     Forward_p.append(logger.rb_p.ring[i])
                 Forward_p.extend(after_p)
         past_sample = logger.ma_p
-
+        if logger.button_up.value:
+            print("up")
+            logger.threshold = round(logger.threshold + 0.1, 3)
+            thermal_printer.printer.print("THRESHOLD:"+ str(logger.threshold))
+            time.sleep(0.5)
+        if logger.button_down.value:
+            print("down")
+            logger.threshold = round(logger.threshold - 0.1, 3)
+            thermal_printer.printer.print("THRESHOLD:"+ str(logger.threshold))
+            time.sleep(0.5)
 
 if __name__ == "__main__":
     main()
