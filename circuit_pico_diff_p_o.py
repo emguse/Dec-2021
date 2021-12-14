@@ -6,6 +6,7 @@ from circuit_ring_buffer import RingBuffer
 import time
 import busio
 import adafruit_thermal_printer
+from circuit_rtc_ds3231 import RtcDs3231
 
 CYCLE_TIME = 0.033  # sec
 IVENT_LENGTH = 10  # sec
@@ -18,16 +19,19 @@ USE_PRINTER = False
 EXPORT_CSV = False
 EXPORT_WAV = False
 USE_BUZZER = True
+I2C_SCL = board.GP1
+I2C_SDA = board.GP0
 PRINTER_RX = board.GP13
 PRINTER_TX = board.GP12
 BUTTON_A = board.GP16
 BUTTON_B = board.GP17
+TIME_ADJUSTING = False
 
 class DifferentialPressureLogger():
-    def __init__(self) -> None:
+    def __init__(self, i2c: I2C) -> None:
         self.rb_p = RingBuffer(QUE_SIZE)
         self.rb_ref = RingBuffer(REFARENCE_PAST_SAMPLE)
-        self.d6f_ph0505 = D6F_PH0505()
+        self.d6f_ph0505 = D6F_PH0505(i2c)
         self.ma_p = 0
         self.past_sample = 0
         self.button_up = digitalio.DigitalInOut(BUTTON_A)
@@ -66,12 +70,22 @@ class PrinterDpEh600:
         self.printer.feed(lines)
 
 def main():
-    logger = DifferentialPressureLogger()
+    i2c = busio.I2C(scl=I2C_SCL, sda=I2C_SDA)
+    logger = DifferentialPressureLogger(i2c)
     ma = MovingAverage(MOVE_AVE_LENGTH, True)
     buzzer = PiPi()
     thermal_printer = PrinterDpEh600()
+    rtc = RtcDs3231(i2c)
+    if TIME_ADJUSTING == True:
+        rtc.time_adjusting = True
+        rtc.time_to_set = (2021, 12, 14, 17, 36, 00, 1, -1, -1)
+        rtc.adjust()
+        t = rtc.read()
+        print(t)
     past_time = 0
-    thermal_printer.printer.print(str(time.time()))
+    t = rtc.read()
+    print("{}-{}-{}T{}:{}:{}".format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec))
+    thermal_printer.printer.print("{}-{}-{}T{}:{}:{}".format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec))
     thermal_printer.printer.print("THRESHOLD:"+ str(logger.threshold))
     for _ in range(MOVE_AVE_LENGTH):
         logger.read_and_record()
@@ -83,7 +97,8 @@ def main():
             if abs(delta) >= logger.threshold:
                 #print("diff_p:" + str(round(ma_p, 4)) + "  Δ:" + str(round(delta, 4)) + "  time:" + str(time.time()))
                 print((round(logger.ma_p, 4), round(delta, 4)))
-                thermal_printer.printer.print(str(time.time()))
+                t = rtc.read()
+                thermal_printer.printer.print("{}-{}-{}T{}:{}:{}".format(t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec))
                 thermal_printer.printer.print(str("diff_P:" + str(round(logger.ma_p, 4)) + ", delta:" + str(round(delta, 4))))
                 thermal_printer.printer.feed(1)
                 buzzer.pi()
