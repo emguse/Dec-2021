@@ -95,7 +95,6 @@ class PiPi:
     def __init__(self) -> None:
         self.buzzer = digitalio.DigitalInOut(board.GP6)
         self.buzzer.direction = digitalio.Direction.OUTPUT
-
     def pi(self) -> None:
         self.buzzer.value = True
         time.sleep(0.03)
@@ -117,10 +116,10 @@ def main():
     logger = DifferentialPressureLogger()
     ma = MovingAverage(MOVE_AVE_LENGTH, True)
     past_time = 0
-    
+
     spi = busio.SPI(SPI_SCK, MOSI=SPI_MOSI, MISO=SPI_MISO)
     cs = SPI_CS
-    #sdcard = sdcardio.SDCard(spi, cs)
+    sdcard = sdcardio.SDCard(spi, cs)
 
     if TIME_ADJUSTING == True:
         logger.time_adjusting()
