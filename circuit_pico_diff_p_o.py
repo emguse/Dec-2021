@@ -8,17 +8,17 @@ import busio
 import adafruit_thermal_printer
 from circuit_rtc_ds3231 import RtcDs3231
 import sdcardio
+import storage
 
 CYCLE_TIME = 0.033  # sec
 IVENT_LENGTH = 10  # sec
 QUE_SIZE = int(IVENT_LENGTH / 2 * 1 / CYCLE_TIME)
 MOVE_AVE_LENGTH = 2
 REFARENCE_PAST_SAMPLE = 2
-THRESHOLD = 0.5
+THRESHOLD = 1.0
 ZERO_OFFSET = 0  # Zero point correction
-USE_PRINTER = False
-EXPORT_CSV = False
-EXPORT_WAV = False
+USE_PRINTER = True
+EXPORT_CSV = True
 USE_BUZZER = True
 I2C_SCL = board.GP1
 I2C_SDA = board.GP0
@@ -36,6 +36,7 @@ TIME_TO_SET = (2021, 12, 13, 20, 45, 00, 0, -1, -1)
 # Year, month, day, hour, minute, second, and weekday are required.
 # weekday is Number between [0,6], where Monday is 0
 # Substitute "-1" for "yearday, isdst".
+SD_DIR = "/sd"
 
 class DifferentialPressureLogger:
     def __init__(self) -> None:
@@ -71,25 +72,43 @@ class DifferentialPressureLogger:
     def timestamp(self) -> None:
         t = self.rtc.read()
         print(
-            "{}-{}-{}T{}:{}:{}".format(
+            "{:04}{:02}{:02}T{:02}{:02}{:02}".format(
                 t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
             )
         )
-        self.thermal_printer.printer.print(
-            "{}-{}-{}T{}:{}:{}".format(
-                t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
+        if USE_PRINTER:
+            self.thermal_printer.printer.print(
+                "{:04}{:02}{:02}T{:02}{:02}{:02}".format(
+                    t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
+                )
             )
-        )
     def threshold_up(self) -> None:
         print("up")
         self.threshold = round(self.threshold + 0.1, 3)
-        self.thermal_printer.printer.print("THRESHOLD:" + str(self.threshold))
+        if USE_PRINTER:
+            self.thermal_printer.printer.print("THRESHOLD:" + str(self.threshold))
         time.sleep(0.5)
     def threshold_down(self) -> None:
         print("down")
         self.threshold = round(self.threshold - 0.1, 3)
-        self.thermal_printer.printer.print("THRESHOLD:" + str(self.threshold))
+        if USE_PRINTER:
+            self.thermal_printer.printer.print("THRESHOLD:" + str(self.threshold))
         time.sleep(0.5)
+    def export_csv(self, d_a) -> None:
+        t = self.rtc.read()
+        tstamp = str(
+            "{:04}{:02}{:02}T{:02}{:02}{:02}".format(
+                t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
+            ))
+        filename = str(SD_DIR + '/' + tstamp + '.csv')
+        try:
+            with open(filename, 'w') as f:
+                print("Start exporting data")
+                for i in d_a:
+                    f.write(str(i)+'\n')
+                print("Export Complete")
+        except:
+            print("File export error")
 
 class PiPi:
     def __init__(self) -> None:
@@ -99,6 +118,7 @@ class PiPi:
         self.buzzer.value = True
         time.sleep(0.03)
         self.buzzer.value = False
+
 
 class PrinterDpEh600:
     def __init__(self) -> None:
@@ -117,14 +137,18 @@ def main():
     ma = MovingAverage(MOVE_AVE_LENGTH, True)
     past_time = 0
 
-    spi = busio.SPI(SPI_SCK, MOSI=SPI_MOSI, MISO=SPI_MISO)
-    cs = SPI_CS
-    sdcard = sdcardio.SDCard(spi, cs)
+    if EXPORT_CSV:
+        spi = busio.SPI(SPI_SCK, MOSI=SPI_MOSI, MISO=SPI_MISO)
+        cs = SPI_CS
+        sdcard = sdcardio.SDCard(spi, cs)
+        vfs = storage.VfsFat(sdcard)
+        storage.mount(vfs, SD_DIR)
 
     if TIME_ADJUSTING == True:
         logger.time_adjusting()
     logger.timestamp()
-    logger.thermal_printer.printer.print("THRESHOLD:" + str(logger.threshold))
+    if USE_PRINTER:
+        logger.thermal_printer.printer.print("THRESHOLD:" + str(logger.threshold))
 
     for _ in range(MOVE_AVE_LENGTH):
         logger.read_and_record()
@@ -138,26 +162,32 @@ def main():
                 # print("diff_p:" + str(round(ma_p, 4)) + "  Δ:" + str(round(delta, 4)) + "  time:" + str(time.time()))
                 print((round(logger.ma_p, 4), round(delta, 4)))
                 logger.timestamp()
-                logger.thermal_printer.printer.print(
-                    str(
-                        "diff_P:"
-                        + str(round(logger.ma_p, 4))
-                        + ", delta:"
-                        + str(round(delta, 4))
+                if USE_PRINTER:
+                    logger.thermal_printer.printer.print(
+                        str(
+                            "diff_P:"
+                            + str(round(logger.ma_p, 4))
+                            + ", delta:"
+                            + str(round(delta, 4))
+                        )
                     )
-                )
-                logger.thermal_printer.printer.feed(1)
-                logger.buzzer.pi()
+                    logger.thermal_printer.printer.feed(1)
+                if USE_BUZZER:
+                    logger.buzzer.pi()
                 past_time = time.time() + IVENT_LENGTH
-                for _ in range(QUE_SIZE):
-                    logger.ma_p = logger.read_dp() - ZERO_OFFSET
+                # File output processing
+                if EXPORT_CSV == True:
                     after_p = []
-                    after_p.append(logger.ma_p)
-                for i in range(QUE_SIZE):
+                    for _ in range(QUE_SIZE):
+                        logger.ma_p = logger.read_dp() - ZERO_OFFSET
+                        after_p.append(logger.ma_p)
                     Forward_p = []
-                    Forward_p.append(logger.rb_p.ring[i])
-                Forward_p.extend(after_p)
+                    for i in range(QUE_SIZE):
+                        Forward_p.append(logger.rb_p.ring[i])
+                    Forward_p.extend(after_p)
+                    logger.export_csv(Forward_p)
         past_sample = logger.ma_p
+        
         if logger.button_up.value:
             logger.threshold_up()
         if logger.button_down.value:
