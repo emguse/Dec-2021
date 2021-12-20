@@ -1,5 +1,11 @@
 from circuit_ring_buffer import RingBuffer
 
+'''
+- 2021/12/20 ver.1.00
+- Author : emguse
+- License: MIT License
+'''
+
 class MovingAverage():
     def __init__(self, length:int, zero_fill=True) -> None:
         self.length = abs(length)

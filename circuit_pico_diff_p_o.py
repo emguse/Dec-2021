@@ -10,6 +10,12 @@ from circuit_rtc_ds3231 import RtcDs3231
 import sdcardio
 import storage
 
+'''
+- 2021/12/20 ver.1.00
+- Author : emguse
+- License: MIT License
+'''
+
 CYCLE_TIME = 0.033  # sec
 IVENT_LENGTH = 10  # sec
 QUE_SIZE = int(IVENT_LENGTH / 2 * 1 / CYCLE_TIME)
@@ -34,7 +40,7 @@ TIME_ADJUSTING = False
 TIME_TO_SET = (2021, 12, 13, 20, 45, 00, 0, -1, -1)
 # TIME_TO_SET = (year, mon, date, hour, min, sec, wday, yday, isdst)
 # Year, month, day, hour, minute, second, and weekday are required.
-# weekday is Number between [0,6], where Monday is 0
+# The day of the week is not specified since it is not used. Depending on your region, you might want to use 0 to 6 and set Sunday to 0.
 # Substitute "-1" for "yearday, isdst".
 SD_DIR = "/sd"
 

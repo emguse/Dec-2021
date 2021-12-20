@@ -1,3 +1,14 @@
+
+
+'''
+- 2021/12/20 ver.1.00
+- Author : emguse
+- License: MIT License
+- note
+This class was created as a temporary class because "Deque" was not supported by Circuitpython. 
+It is assumed that it will be recreated with "Deque" when it is supported in the future.
+'''
+
 class RingBuffer:
     def __init__(self, length):
         self.size = length

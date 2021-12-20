@@ -4,6 +4,13 @@ import time
 from adafruit_bus_device.i2c_device import I2CDevice
 import adafruit_ds3231
 
+
+'''
+- 2021/12/20 ver.1.00
+- Author : emguse
+- License: MIT License
+'''
+
 TIME_ADJUSTING = False
 
 TIME_TO_SET = (2021, 12, 13, 20, 45, 00, 0, -1, -1)
