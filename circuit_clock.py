@@ -8,16 +8,22 @@ from circuit_rtc_ds3231 import RtcDs3231
 from adafruit_ht16k33.segments import BigSeg7x4
 
 '''
-- 2021/12/22 ver.0.01
+- 2021/12/22 ver.0.03
 - Author : emguse
 - License: MIT License
+'''
+'''
 Hardware requirements
 - Adafruit QT Py RP2040
 - Adafruit DS3231 Precision RTC-STEMMA QT
 - Adafruit 1.2" 4-Digit 7-Segment Display w/I2C Backpack - Yellow
+- self-excited buzzer(optional)
+- NPN transistor
+- 10k Ohm resistor
 '''
 
-BUZZER_PIN = board.D4
+BUZZER_PIN = board.D4 # D4 silk is SDA
+USE_BUZZER = True
 TIME_ADJUSTING = False
 TIME_TO_SET = (2021, 12, 23, 20, 21, 00, 4, -1, -1)
 # TIME_TO_SET = (year, mon, date, hour, min, sec, wday, yday, isdst)
@@ -46,7 +52,7 @@ class OnbordNeopix():
         self.pixel[0] = colorwheel(self.color_step & 255)
         self.pixel.show()
 
-class PiPi:
+class PiPi():
     def __init__(self) -> None:
         self.buzzer = digitalio.DigitalInOut(BUZZER_PIN)
         self.buzzer.direction = digitalio.Direction.OUTPUT
@@ -55,6 +61,7 @@ class PiPi:
             self.buzzer.value = True
             time.sleep(0.03)
             self.buzzer.value = False
+            time.sleep(0.03)
 
 def main():
     i2c = busio.I2C(board.SCL1, board.SDA1)
@@ -63,6 +70,7 @@ def main():
     display.brightness = 0.5
     onbord_neopix = OnbordNeopix()
     buzzer = PiPi()
+    buzzer.pi(2)
 
     if TIME_ADJUSTING:
         rtc.time_adjusting = True
@@ -86,11 +94,12 @@ def main():
             display.colon = True
         else:
             display.colon = False
-        if t.tm_min + t.tm_sec == 0:
-            buzzer.pi(2)
-        if t.tm_min == 30:
-            if t.tm_sec == 0:
-                buzzer.pi(1)
+        if USE_BUZZER:
+            if t.tm_min + t.tm_sec == 0:
+                buzzer.pi(2)
+            if t.tm_min == 30:
+                if t.tm_sec == 0:
+                    buzzer.pi(1)
         time.sleep(1)
 
 if __name__ == '__main__':
