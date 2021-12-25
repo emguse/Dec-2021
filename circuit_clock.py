@@ -46,7 +46,7 @@ class OnbordNeopix():
         self.pixel[0] = colorwheel(self.color_step & 255)
         self.pixel.show()
 
-class PiPi:
+class PiPi():
     def __init__(self) -> None:
         self.buzzer = digitalio.DigitalInOut(BUZZER_PIN)
         self.buzzer.direction = digitalio.Direction.OUTPUT
