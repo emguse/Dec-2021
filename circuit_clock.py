@@ -1,6 +1,7 @@
 import time
 import board
 import busio
+import bitbangio
 import neopixel
 import digitalio
 from rainbowio import colorwheel
@@ -64,7 +65,7 @@ class PiPi():
             time.sleep(0.03)
 
 def main():
-    i2c = busio.I2C(board.SCL1, board.SDA1)
+    i2c = bitbangio.I2C(board.SCL1, board.SDA1)
     rtc = RtcDs3231(i2c)
     display = BigSeg7x4(i2c)
     display.brightness = 0.5
