@@ -9,7 +9,7 @@ from circuit_rtc_ds3231 import RtcDs3231
 from adafruit_ht16k33.segments import BigSeg7x4
 
 '''
-- 2021/12/22 ver.0.03
+- 2021/12/27 ver.0.04
 - Author : emguse
 - License: MIT License
 '''
@@ -48,7 +48,7 @@ class OnbordNeopix():
             self.pixel.show()
             time.sleep(delay)
 
-    def rainbow_step(self):
+    def rainbow_step(self): # Each time it is called, it advances the color one step
         self.color_step += 1
         self.pixel[0] = colorwheel(self.color_step & 255)
         self.pixel.show()
@@ -57,7 +57,7 @@ class PiPi():
     def __init__(self) -> None:
         self.buzzer = digitalio.DigitalInOut(BUZZER_PIN)
         self.buzzer.direction = digitalio.Direction.OUTPUT
-    def pi(self, count) -> None:
+    def pi(self, count) -> None: # Sounds for the number of arguments passed
         for i in range(count):
             self.buzzer.value = True
             time.sleep(0.03)
@@ -70,8 +70,9 @@ def main():
     display = BigSeg7x4(i2c)
     display.brightness = 0.5
     onbord_neopix = OnbordNeopix()
-    buzzer = PiPi()
-    buzzer.pi(2)
+    if USE_BUZZER:
+        buzzer = PiPi()
+        buzzer.pi(2)
 
     if TIME_ADJUSTING:
         rtc.time_adjusting = True
@@ -90,6 +91,7 @@ def main():
             ))
         print(tstamp)
         display.print("{:02}{:02}".format(t.tm_hour, t.tm_min))
+        time.sleep(0.001)
         # Blinking cologne
         if t.tm_sec % 2 == 0:
             display.colon = True
