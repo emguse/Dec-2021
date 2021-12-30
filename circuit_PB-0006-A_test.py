@@ -5,6 +5,10 @@ import time
 import neopixel
 from rainbowio import colorwheel
 from adafruit_bme280 import basic as adafruit_bme280
+import displayio
+import terminalio
+import adafruit_displayio_sh1107
+from adafruit_display_text import label
 
 class OnbordNeopix():
     def __init__(self) -> None:
@@ -26,17 +30,48 @@ class OnbordNeopix():
         self.pixel.show()
 
 def main():
+    displayio.release_displays()
     onbord_neopix = OnbordNeopix()
     
     i2c = busio.I2C(board.GP3, board.GP2)
     bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c)
+    display_bus = displayio.I2CDisplay(i2c, device_address=0x3c)
+    display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64, rotation=0)
     
     while True:
         onbord_neopix.rainbow_step()
-        print("\nTemperature: %0.1f C" % bme280.temperature)
-        print("Humidity: %0.1f %%" % bme280.relative_humidity)
-        print("Pressure: %0.1f hPa" % bme280.pressure)
-        print("Altitude = %0.2f meters" % bme280.altitude)
+        print("Tmp: %0.1f C" % bme280.temperature)
+        print("Hum: %0.1f %%" % bme280.relative_humidity)
+        print("Prs: %0.1f hPa" % bme280.pressure)
+        print("Alt: %0.2f m" % bme280.altitude)
+        
+        tmp = ("Tmp: %0.1f C" % bme280.temperature)
+        text_area1 = label.Label(terminalio.FONT, text=tmp)
+        text_area1.x = 10
+        text_area1.y = 10
+
+        tmp = ("Hum: %0.1f %%" % bme280.relative_humidity)
+        text_area2 = label.Label(terminalio.FONT, text=tmp)
+        text_area2.x = 10
+        text_area2.y = 20
+
+        tmp = ("Prs: %0.1f hPa" % bme280.pressure)
+        text_area3 = label.Label(terminalio.FONT, text=tmp)
+        text_area3.x = 10
+        text_area3.y = 30
+
+        tmp = ("Alt: %0.2f m" % bme280.altitude)
+        text_area4 = label.Label(terminalio.FONT, text=tmp)
+        text_area4.x = 10
+        text_area4.y = 40
+
+        now = displayio.Group()
+        now.append(text_area1)
+        now.append(text_area2)
+        now.append(text_area3)
+        now.append(text_area4)
+        display.show(now)
+        
         time.sleep(1)
 
 if __name__ == '__main__':
