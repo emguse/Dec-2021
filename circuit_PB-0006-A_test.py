@@ -50,18 +50,18 @@ def main():
         text_area1.x = 10
         text_area1.y = 10
 
-        tmp = ("Hum: %0.1f %%" % bme280.relative_humidity)
-        text_area2 = label.Label(terminalio.FONT, text=tmp)
+        hum = ("Hum: %0.1f %%" % bme280.relative_humidity)
+        text_area2 = label.Label(terminalio.FONT, text=hum)
         text_area2.x = 10
         text_area2.y = 20
 
-        tmp = ("Prs: %0.1f hPa" % bme280.pressure)
-        text_area3 = label.Label(terminalio.FONT, text=tmp)
+        prs = ("Prs: %0.1f hPa" % bme280.pressure)
+        text_area3 = label.Label(terminalio.FONT, text=prs)
         text_area3.x = 10
         text_area3.y = 30
 
-        tmp = ("Alt: %0.2f m" % bme280.altitude)
-        text_area4 = label.Label(terminalio.FONT, text=tmp)
+        alt = ("Alt: %0.2f m" % bme280.altitude)
+        text_area4 = label.Label(terminalio.FONT, text=alt)
         text_area4.x = 10
         text_area4.y = 40
 
