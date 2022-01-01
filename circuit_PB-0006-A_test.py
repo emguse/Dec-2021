@@ -40,27 +40,27 @@ def main():
     
     while True:
         onbord_neopix.rainbow_step()
-        print("Tmp: %0.1f C" % bme280.temperature)
-        print("Hum: %0.1f %%" % bme280.relative_humidity)
-        print("Prs: %0.1f hPa" % bme280.pressure)
-        print("Alt: %0.2f m" % bme280.altitude)
         
         tmp = ("Tmp: %0.1f C" % bme280.temperature)
+        print(tmp)
         text_area1 = label.Label(terminalio.FONT, text=tmp)
         text_area1.x = 10
         text_area1.y = 10
 
         hum = ("Hum: %0.1f %%" % bme280.relative_humidity)
+        print(hum)
         text_area2 = label.Label(terminalio.FONT, text=hum)
         text_area2.x = 10
         text_area2.y = 20
 
         prs = ("Prs: %0.1f hPa" % bme280.pressure)
+        print(prs)
         text_area3 = label.Label(terminalio.FONT, text=prs)
         text_area3.x = 10
         text_area3.y = 30
 
         alt = ("Alt: %0.2f m" % bme280.altitude)
+        print(alt)
         text_area4 = label.Label(terminalio.FONT, text=alt)
         text_area4.x = 10
         text_area4.y = 40
