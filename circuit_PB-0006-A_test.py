@@ -1,5 +1,4 @@
 import board
-import digitalio
 import busio
 import time
 import neopixel
@@ -32,15 +31,15 @@ class OnbordNeopix():
 def main():
     displayio.release_displays()
     onbord_neopix = OnbordNeopix()
-    
+
     i2c = busio.I2C(board.GP3, board.GP2)
     bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c)
     display_bus = displayio.I2CDisplay(i2c, device_address=0x3c)
     display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64, rotation=0)
-    
+
     while True:
         onbord_neopix.rainbow_step()
-        
+
         tmp = ("Tmp: %0.1f C" % bme280.temperature)
         print(tmp)
         text_area1 = label.Label(terminalio.FONT, text=tmp)
@@ -71,7 +70,7 @@ def main():
         now.append(text_area3)
         now.append(text_area4)
         display.show(now)
-        
+
         time.sleep(1)
 
 if __name__ == '__main__':
